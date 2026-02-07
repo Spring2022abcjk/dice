@@ -1,7 +1,8 @@
 maubot: 0.1.0
-id: xyz.maubot.dice
-version: 1.1.0
+id: com.varhub.dice
+version: 1.1.3
 license: AGPL-3.0-or-later
+author: Tulir Asokan & Spring2022abcjk
 modules:
 - dice
 main_class: DiceBot

@@ -121,7 +121,14 @@ class Calc(ast.NodeVisitor):
             return math.tau
         elif node.id == "e":
             return math.e
-
+        
+    def visit_Constant(self, node: ast.Constant) -> Any:
+        if isinstance(node.value, (int, float)):
+            if node.value > _NUM_MAX or node.value < _NUM_MIN:
+                raise ValueError(f"Number out of bounds")
+            return node.value
+        return None
+    
     def visit_Call(self, node: ast.Call) -> Any:
         if isinstance(node.func, ast.Name):
             if node.func.id == "ord" and len(node.args) == 1 and isinstance(node.args[0], ast.Str):
@@ -193,13 +200,25 @@ class DiceBot(Plugin):
     @command.new("roll")
     @command.argument("pattern", pass_raw=True, required=False)
     async def roll(self, evt: MessageEvent, pattern: str) -> None:
+        clean_pattern = pattern.strip().lower() if pattern else ""
+        
+        if clean_pattern == "help":
+            help_text = (
+                "🎲 **Dice Bot 帮助手册**\n\n"
+                "用法：`!roll <表达式>`\n"
+                "示例：`!roll 2d6`, `!roll d20+5`, `!roll sqrt(1d100)`\n"
+                "限制：公式上限 64 字符。"
+            )
+            await evt.reply(help_text, allow_html=True)
+            return
+        
         if not pattern:
             await evt.reply(str(random.randint(1, 6)))
             return
-        elif len(pattern) > 64:
+
+        if len(pattern) > 64:
             await evt.reply("Bad pattern 3:<")
-            return
-        self.log.debug(f"Handling `{pattern}` from {evt.sender}")
+            return        self.log.debug(f"Handling `{pattern}` from {evt.sender}")
 
         individual_rolls = [] if self.show_rolls else None
 
