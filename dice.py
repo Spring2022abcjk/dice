@@ -200,13 +200,27 @@ class DiceBot(Plugin):
     @command.new("roll")
     @command.argument("pattern", pass_raw=True, required=False)
     async def roll(self, evt: MessageEvent, pattern: str) -> None:
+        clean_pattern = pattern.strip().lower() if pattern else ""
+
+        if clean_pattern == "help":
+            help_message = (
+                "🎲 **Dice Bot 帮助手册**\n\n"
+                "**基础用法**：`!roll 2d6` (掷2个6面骰)\n"
+                "**数学运算**：`!roll 1d20 + 5` 或 `!roll (1d10 + 2) * 3`\n"
+                "**高级函数**：`!roll sqrt(1d100)` (支持 sin, log, floor 等)\n"
+                "**常量支持**：`!roll pi` 或 `!roll e`\n\n"
+                "⚠️ *提示：公式请勿超过 64 个字符。*"
+            )
+            await evt.reply(help_message, allow_html=True)
+            return
+
         if not pattern:
             await evt.reply(str(random.randint(1, 6)))
             return
-        elif len(pattern) > 64:
+
+        if len(pattern) > 64:
             await evt.reply("Bad pattern 3:<")
-            return
-        self.log.debug(f"Handling `{pattern}` from {evt.sender}")
+            return        self.log.debug(f"Handling `{pattern}` from {evt.sender}")
 
         individual_rolls = [] if self.show_rolls else None
 
