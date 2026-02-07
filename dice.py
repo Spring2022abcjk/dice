@@ -121,7 +121,14 @@ class Calc(ast.NodeVisitor):
             return math.tau
         elif node.id == "e":
             return math.e
-
+        
+    def visit_Constant(self, node: ast.Constant) -> Any:
+        if isinstance(node.value, (int, float)):
+            if node.value > _NUM_MAX or node.value < _NUM_MIN:
+                raise ValueError(f"Number out of bounds")
+            return node.value
+        return None
+    
     def visit_Call(self, node: ast.Call) -> Any:
         if isinstance(node.func, ast.Name):
             if node.func.id == "ord" and len(node.args) == 1 and isinstance(node.args[0], ast.Str):
