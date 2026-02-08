@@ -197,28 +197,13 @@ class DiceBot(Plugin):
     def get_config_class(cls) -> Type[Config]:
         return Config
 
-    @command.new("roll")
-    @command.argument("pattern", pass_raw=True, required=False)
-    async def roll(self, evt: MessageEvent, pattern: str) -> None:
-        clean_pattern = pattern.strip().lower() if pattern else ""
-        
-        if clean_pattern == "help":
-            help_text = (
-                "🎲 **Dice Bot 帮助手册**\n\n"
-                "用法：`!roll <表达式>`\n"
-                "示例：`!roll 2d6`, `!roll d20+5`, `!roll sqrt(1d100)`\n"
-                "限制：公式上限 64 字符。"
-            )
-            await evt.reply(help_text, allow_html=True)
-            return
-        
-        if not pattern:
-            await evt.reply(str(random.randint(1, 6)))
-            return
-
+    async def _execute_roll(self, evt: MessageEvent, pattern: str) -> None:
+        """执行掷骰逻辑的内部方法"""
         if len(pattern) > 64:
             await evt.reply("Bad pattern 3:<")
-            return        self.log.debug(f"Handling `{pattern}` from {evt.sender}")
+            return
+        
+        self.log.debug(f"Handling `{pattern}` from {evt.sender}")
 
         individual_rolls = [] if self.show_rolls else None
 
@@ -271,3 +256,23 @@ class DiceBot(Plugin):
             result += "\n".join(f"{number}d{size}: {' '.join(str(result) for result in results)}  "
                                 for number, size, results in individual_rolls)
         await evt.reply(result)
+
+    @command.new("roll", help="Dice roller with calculator", require_subcommand=False)
+    @command.argument("pattern", pass_raw=True, required=False)
+    async def roll(self, evt: MessageEvent, pattern: str) -> None:
+        """主命令：掷骰子。不带参数时掷 1d6，带表达式时计算结果。"""
+        if pattern:
+            await self._execute_roll(evt, pattern)
+        else:
+            await evt.reply(str(random.randint(1, 6)))
+
+    @roll.subcommand("help", help="Show detailed usage guide and examples")
+    async def roll_help(self, evt: MessageEvent) -> None:
+        """帮助子命令：显示详细的使用说明和示例"""
+        help_text = (
+            "🎲 **Dice Bot 帮助手册**\n\n"
+            "用法：`!roll <表达式>`\n"
+            "示例：`!roll 2d6`, `!roll d20+5`, `!roll sqrt(1d100)`\n"
+            "限制：公式上限 64 字符。"
+        )
+        await evt.reply(help_text, allow_html=True)
